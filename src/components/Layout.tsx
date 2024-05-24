@@ -91,7 +91,7 @@ export function Layout({ children }: { children: React.ReactNode }) {
           {children}
         </div>
       ) : (
-        <div className="relative mx-auto flex w-full max-w-8xl flex-auto justify-center sm:px-2 lg:px-8 xl:px-12">
+        <div className="relative mx-auto flex w-full max-w-8xl flex-auto sm:px-2 lg:px-8 xl:px-12">
           {children}
         </div>
       )}
