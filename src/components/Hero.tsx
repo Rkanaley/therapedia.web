@@ -10,16 +10,20 @@ import blurIndigoImage from '@/images/blur-indigo.png'
 
 const codeLanguage = 'javascript'
 const code = `export default {
-  strategy: 'predictive',
-  engine: {
-    cpus: 12,
-    backups: ['./storage/cache.wtf'],
-  },
+  type: ['therapist', 'psychologists', 'psychiatrist'],
+  realtime: true,
+  audio: './storage/audio.mp4',
+  transcription: {
+    language: 'en',
+    punctuation: true,
+    speaker: true,
+    medical: true,
+  }
 }`
 
 const tabs = [
-  { name: 'cache-advance.config.js', isActive: true },
-  { name: 'package.json', isActive: false },
+  { name: 'Medical Transcription', isActive: true },
+  { name: 'Chat Bot Assistant', isActive: false },
 ]
 
 function TrafficLightsIcon(props: React.ComponentPropsWithoutRef<'svg'>) {
@@ -49,16 +53,17 @@ export function Hero() {
             />
             <div className="relative">
               <p className="inline bg-gradient-to-r from-indigo-200 via-sky-400 to-indigo-200 bg-clip-text font-display text-5xl tracking-tight text-transparent">
-                Never miss the cache again.
+                Hi, I'm Ever.
               </p>
               <p className="mt-3 text-2xl tracking-tight text-slate-400">
-                Cache every single thing your app could ever do ahead of time,
-                so your code never even has to run at all.
+                The world's most HIPAA-compliant AI assistant for Therapists,
+                Psychologists, and Psychiatrists.
+                {/*Therapedia has created the world’s most secure, intelligent, and competent AI speech to text assistant for Therapists and Psychologists. We call her Ever. Ever can take your notes for you, make adjustments as you see fit, and even update them in your EHR of choice, ultimately saving you thousands of hours per year. Let Ever handle all your time-consuming tasks so you can focus on what matters most.*/}
               </p>
               <div className="mt-8 flex gap-4 md:justify-center lg:justify-start">
-                <Button href="/">Get started</Button>
+                <Button href="/transcribe">Get started</Button>
                 <Button href="/" variant="secondary">
-                  View on GitHub
+                  Learn More
                 </Button>
               </div>
             </div>
