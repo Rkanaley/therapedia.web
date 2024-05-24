@@ -8,7 +8,8 @@ export default function Page() {
   const mediaRecorderRef = useRef<MediaRecorder | null>(null)
 
   useEffect(() => {
-    socketRef.current = io()
+    // TODO: Replace with server URL
+    socketRef.current = io('http://localhost:8000')
 
     const handleSuccess = (stream: MediaStream) => {
       mediaRecorderRef.current = new MediaRecorder(stream)
