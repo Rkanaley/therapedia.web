@@ -9,8 +9,8 @@ export default function Page() {
   const scriptProcessorRef = useRef<ScriptProcessorNode | null>(null)
   const socketRef = useRef<Socket | null>(null)
   const audioBufferRef = useRef<Float32Array[]>([])
+
   const [transcription, setTranscription] = useState('')
-  const [error, setError] = useState('')
   const [isRecording, setIsRecording] = useState(false)
 
   useEffect(() => {
@@ -23,7 +23,6 @@ export default function Page() {
     const startRecording = async () => {
       if (!navigator.mediaDevices.getUserMedia) {
         console.error('getUserMedia not supported on your browser!')
-        setError('getUserMedia not supported on your browser!')
         return
       }
 
@@ -50,7 +49,6 @@ export default function Page() {
         scriptProcessorRef.current.connect(audioContextRef.current.destination)
       } catch (err) {
         console.error('Error accessing audio devices.', err)
-        setError('Error accessing audio devices.')
       }
     }
 
@@ -69,7 +67,7 @@ export default function Page() {
         const bufferedData = flattenAudioBuffer(audioBufferRef.current)
         const int16Array = convertToPCM(bufferedData)
         socketRef.current.emit('audio', int16Array.buffer)
-        audioBufferRef.current = [] // Clear buffer
+        audioBufferRef.current = []
       }
     }
 
@@ -136,12 +134,6 @@ export default function Page() {
           Stop Recording
         </Button>
       </div>
-
-      {error && (
-        <p className="mb-2" style={{ color: 'red', fontStyle: 'italic' }}>
-          {error}
-        </p>
-      )}
 
       <h2 className="mb-5 font-display text-2xl tracking-tight text-slate-900 dark:text-white">
         Transcription:
