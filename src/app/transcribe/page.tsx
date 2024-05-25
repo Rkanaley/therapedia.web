@@ -75,7 +75,7 @@ export default function Page() {
 
     if (isRecording) {
       startRecording()
-      const intervalId = setInterval(sendBufferedAudio, 5000)
+      const intervalId = setInterval(sendBufferedAudio, 1000)
       return () => clearInterval(intervalId)
     } else {
       stopRecording()
