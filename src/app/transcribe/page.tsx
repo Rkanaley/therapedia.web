@@ -5,90 +5,145 @@ import io, { Socket } from 'socket.io-client'
 import { Button } from '@/components/Button'
 
 export default function Page() {
+  const audioContextRef = useRef<AudioContext | null>(null)
+  const scriptProcessorRef = useRef<ScriptProcessorNode | null>(null)
   const socketRef = useRef<Socket | null>(null)
-  const mediaRecorderRef = useRef<MediaRecorder | null>(null)
+  const audioBufferRef = useRef<Float32Array[]>([])
   const [transcription, setTranscription] = useState('')
   const [error, setError] = useState('')
   const [isRecording, setIsRecording] = useState(false)
 
-  const startRecording = () => {
-    if (mediaRecorderRef.current) {
-      mediaRecorderRef.current.start(1000) // Send data in chunks of 1 second
-      setIsRecording(true)
-    }
-  }
-
-  const stopRecording = () => {
-    if (mediaRecorderRef.current) {
-      mediaRecorderRef.current.stop()
-      setIsRecording(false)
-    }
-  }
-
   useEffect(() => {
-    socketRef.current = io('http://localhost:8000')
+    socketRef.current = io('ws://localhost:8000')
 
     socketRef.current.on('transcription', (transcript: string) => {
       setTranscription((prev) => prev + ' ' + transcript)
     })
 
-    navigator.mediaDevices
-      .getUserMedia({ audio: true })
-      .then((stream: MediaStream) => {
-        try {
-          const options = { mimeType: 'audio/webm' }
-          mediaRecorderRef.current = new MediaRecorder(stream, options)
-          mediaRecorderRef.current.ondataavailable = (event: BlobEvent) => {
-            if (event.data.size > 0) {
-              event.data.arrayBuffer().then((buffer) => {
-                socketRef.current?.emit('audio', new Uint8Array(buffer))
-              })
-            }
-          }
-        } catch (error) {
-          console.error('Error initializing MediaRecorder:', error)
-          setError('Error initializing MediaRecorder')
+    const startRecording = async () => {
+      if (!navigator.mediaDevices.getUserMedia) {
+        console.error('getUserMedia not supported on your browser!')
+        setError('getUserMedia not supported on your browser!')
+        return
+      }
+
+      audioContextRef.current = new window.AudioContext()
+
+      try {
+        const stream = await navigator.mediaDevices.getUserMedia({
+          audio: true,
+        })
+
+        const source = audioContextRef.current.createMediaStreamSource(stream)
+
+        scriptProcessorRef.current =
+          audioContextRef.current.createScriptProcessor(4096, 1, 1)
+
+        scriptProcessorRef.current.onaudioprocess = (audioProcessingEvent) => {
+          const inputBuffer = audioProcessingEvent.inputBuffer
+          const inputData = inputBuffer.getChannelData(0)
+
+          audioBufferRef.current.push(new Float32Array(inputData))
         }
-      })
-      .catch((error: Error) => {
-        console.error('Error accessing microphone:', error)
-        setError('Error accessing microphone: ' + error.message)
-      })
+
+        source.connect(scriptProcessorRef.current)
+        scriptProcessorRef.current.connect(audioContextRef.current.destination)
+      } catch (err) {
+        console.error('Error accessing audio devices.', err)
+        setError('Error accessing audio devices.')
+      }
+    }
+
+    const stopRecording = () => {
+      if (scriptProcessorRef.current) {
+        scriptProcessorRef.current.disconnect()
+        scriptProcessorRef.current.onaudioprocess = null
+      }
+      if (audioContextRef.current) {
+        audioContextRef.current.close()
+      }
+    }
+
+    const sendBufferedAudio = () => {
+      if (audioBufferRef.current.length > 0 && socketRef.current?.connected) {
+        const bufferedData = flattenAudioBuffer(audioBufferRef.current)
+        const int16Array = convertToPCM(bufferedData)
+        socketRef.current.emit('audio', int16Array.buffer)
+        audioBufferRef.current = [] // Clear buffer
+      }
+    }
+
+    if (isRecording) {
+      startRecording()
+      const intervalId = setInterval(sendBufferedAudio, 5000)
+      return () => clearInterval(intervalId)
+    } else {
+      stopRecording()
+    }
 
     return () => {
-      if (mediaRecorderRef.current) {
-        mediaRecorderRef.current.stop()
+      if (scriptProcessorRef.current) {
+        scriptProcessorRef.current.disconnect()
+        scriptProcessorRef.current.onaudioprocess = null
       }
+
+      if (audioContextRef.current) {
+        audioContextRef.current.close()
+      }
+
       socketRef.current?.disconnect()
     }
-  }, [])
+  }, [isRecording])
+
+  const flattenAudioBuffer = (audioBufferArray: Float32Array[]) => {
+    const length = audioBufferArray.reduce((acc, cur) => acc + cur.length, 0)
+    const result = new Float32Array(length)
+    let offset = 0
+    for (const buffer of audioBufferArray) {
+      result.set(buffer, offset)
+      offset += buffer.length
+    }
+    return result
+  }
+
+  const convertToPCM = (buffer: Float32Array) => {
+    const pcmData = new Int16Array(buffer.length)
+    for (let i = 0; i < buffer.length; i++) {
+      pcmData[i] = Math.max(-1, Math.min(1, buffer[i])) * 0x7fff
+    }
+    return pcmData
+  }
 
   return (
     <div>
-      <h1 className="mb-9 font-display text-3xl tracking-tight text-slate-900 dark:text-white">
+      <h1 className="mb-5 mt-5 font-display text-3xl tracking-tight text-slate-900 dark:text-white">
         Real-time Audio Transcription
       </h1>
-
-      {error && <p style={{ color: 'red' }}>{error}</p>}
 
       <div className="mb-4 flex gap-4 md:justify-center lg:justify-start">
         <Button
           variant={isRecording ? 'secondary' : 'primary'}
-          onClick={startRecording}
+          onClick={() => setIsRecording(true)}
           disabled={isRecording}
         >
           Start Recording
         </Button>
         <Button
           variant={!isRecording ? 'secondary' : 'primary'}
-          onClick={stopRecording}
+          onClick={() => setIsRecording(false)}
           disabled={!isRecording}
         >
           Stop Recording
         </Button>
       </div>
 
-      <h2 className="mb-4 font-display text-2xl tracking-tight text-slate-900 dark:text-white">
+      {error && (
+        <p className="mb-2" style={{ color: 'red', fontStyle: 'italic' }}>
+          {error}
+        </p>
+      )}
+
+      <h2 className="mb-5 font-display text-2xl tracking-tight text-slate-900 dark:text-white">
         Transcription:
       </h2>
       <p>{transcription}</p>
