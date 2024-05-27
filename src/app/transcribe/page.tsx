@@ -105,7 +105,7 @@ export default function Page() {
   }
 
   const convertToPCM = (buffer: Float32Array) => {
-    const pcmData = new Int16Array(buffer.length)
+    const pcmData = new Int32Array(buffer.length)
     for (let i = 0; i < buffer.length; i++) {
       pcmData[i] = Math.max(-1, Math.min(1, buffer[i])) * 0x7fff
     }
