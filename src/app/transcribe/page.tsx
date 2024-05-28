@@ -5,10 +5,7 @@ import io, { Socket } from 'socket.io-client'
 import { Button } from '@/components/Button'
 
 const getWebSocketUrl = () => {
-  const isProduction = process.env.NODE_ENV === 'production'
-  const protocol = isProduction ? 'wss' : 'ws'
-  const domain = process.env.NEXT_PUBLIC_API_BASE_URL || 'localhost:8000'
-  return `${protocol}://${domain}`
+  return process.env.NEXT_PUBLIC_WS_URL || 'ws://localhost:8000'
 }
 
 export default function Page() {
