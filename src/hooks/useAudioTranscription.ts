@@ -1,4 +1,3 @@
-// useAudioTranscription.ts
 import { useEffect, useRef, useState } from 'react'
 import io, { Socket } from 'socket.io-client'
 
@@ -13,8 +12,14 @@ const useAudioTranscription = (token: string | null) => {
   const [error, setError] = useState<string | null>(null)
 
   useEffect(() => {
+    if (!token) {
+      setError('No authorisation provided!')
+    }
+
     try {
-      socketRef.current = io(getWebSocketUrl())
+      socketRef.current = io(getWebSocketUrl(), {
+        query: { token },
+      })
     } catch (error) {
       setError('Error connecting to the server!')
       return
@@ -96,7 +101,7 @@ const useAudioTranscription = (token: string | null) => {
 
       socketRef.current?.disconnect()
     }
-  }, [isRecording])
+  }, [isRecording, token])
 
   return { transcription, isRecording, setIsRecording, error }
 }
