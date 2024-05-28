@@ -4,6 +4,13 @@ import React, { useEffect, useRef, useState } from 'react'
 import io, { Socket } from 'socket.io-client'
 import { Button } from '@/components/Button'
 
+const getWebSocketUrl = () => {
+  const isProduction = process.env.NODE_ENV === 'production'
+  const protocol = isProduction ? 'wss' : 'ws'
+  const domain = process.env.NEXT_PUBLIC_API_BASE_URL || 'localhost:8000'
+  return `${protocol}://${domain}`
+}
+
 export default function Page() {
   const audioContextRef = useRef<AudioContext | null>(null)
   const scriptProcessorRef = useRef<ScriptProcessorNode | null>(null)
@@ -14,7 +21,7 @@ export default function Page() {
   const [isRecording, setIsRecording] = useState(false)
 
   useEffect(() => {
-    socketRef.current = io('ws://localhost:8000')
+    socketRef.current = io(getWebSocketUrl())
 
     socketRef.current.on('transcription', (transcript: string) => {
       setTranscription((prev) => prev + ' ' + transcript)
