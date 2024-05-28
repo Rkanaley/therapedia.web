@@ -120,12 +120,12 @@ export default function Page() {
   }
 
   return (
-    <div>
+    <div className="mx-4">
       <h1 className="mb-5 mt-5 font-display text-3xl tracking-tight text-slate-900 dark:text-white">
         Real-time Audio Transcription
       </h1>
 
-      <div className="mb-4 flex gap-4 md:justify-center lg:justify-start">
+      <div className="mb-4 flex justify-start gap-4">
         <Button
           variant={isRecording ? 'secondary' : 'primary'}
           onClick={() => setIsRecording(true)}
