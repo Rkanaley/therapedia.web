@@ -2,6 +2,7 @@
 
 import React, { useEffect, useRef, useState } from 'react'
 import io, { Socket } from 'socket.io-client'
+import Cookies from 'js-cookie'
 import { Button } from '@/components/Button'
 
 const getWebSocketUrl = () => {
@@ -18,8 +19,20 @@ export default function Page() {
   const [transcription, setTranscription] = useState('')
   const [isRecording, setIsRecording] = useState(false)
 
+  const [error, setError] = useState<string | null>(null)
+
+  const [token, setToken] = useState<string | null>(
+    Cookies.get('token') || null,
+  )
+  const hasToken = !!token // This does not mean they are authenticated, we just allow them to click around.
+
   useEffect(() => {
-    socketRef.current = io(getWebSocketUrl())
+    try {
+      socketRef.current = io(getWebSocketUrl())
+    } catch (error) {
+      setError('Error connecting to the server!')
+      return
+    }
 
     socketRef.current.on('transcription', (transcript: string) => {
       setTranscription((prev) => prev + ' ' + transcript)
@@ -123,18 +136,20 @@ export default function Page() {
         Real-time Audio Transcription
       </h1>
 
+      {error && <div className="mb-4 text-red-500">{error}</div>}
+
       <div className="mb-4 flex justify-start gap-4">
         <Button
           variant={isRecording ? 'secondary' : 'primary'}
           onClick={() => setIsRecording(true)}
-          disabled={isRecording}
+          disabled={isRecording || !hasToken}
         >
           Start Recording
         </Button>
         <Button
           variant={!isRecording ? 'secondary' : 'primary'}
           onClick={() => setIsRecording(false)}
-          disabled={!isRecording}
+          disabled={!isRecording || !hasToken}
         >
           Stop Recording
         </Button>
