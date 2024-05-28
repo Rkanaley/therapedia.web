@@ -19,9 +19,12 @@ const Layout: React.FC<{ children: ReactNode }> = ({ children }) => {
     }
 
     fetch(`${process.env.NEXT_PUBLIC_API_URL}/auth/validate`, {
+      method: 'POST',
       headers: {
+        'Content-Type': 'application/json',
         Authorization: `Bearer ${token}`,
       },
+      body: JSON.stringify({ token }),
     })
       .then((response) => {
         if (response.ok) {
