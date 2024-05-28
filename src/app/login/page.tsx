@@ -3,8 +3,12 @@
 import { useState } from 'react'
 import axios from 'axios'
 import { Button } from '@/components/Button'
+import { useRouter } from 'next/navigation'
+import Cookies from 'js-cookie'
 
 export default function LoginPage() {
+  const router = useRouter()
+
   const [email, setEmail] = useState('')
   const [password, setPassword] = useState('')
 
@@ -18,7 +22,22 @@ export default function LoginPage() {
         },
       )
 
-      console.log('logged in', response.data)
+      const { token } = response.data
+
+      if (!token) {
+        console.error('Token not found in response')
+        return
+      }
+
+      // Set token in cookie with additional options
+      Cookies.set('token', token, {
+        expires: 7, // Cookie will expire in 7 days
+        secure: process.env.NODE_ENV === 'production', // Secure flag for HTTPS in production
+        sameSite: 'Lax', // CSRF protection
+        path: '/', // Cookie available in the entire site
+      })
+
+      router.push('/transcribe')
     } catch (error) {
       console.error('Login failed:', error)
     }
