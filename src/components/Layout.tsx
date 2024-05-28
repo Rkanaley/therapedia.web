@@ -69,8 +69,9 @@ export function Layout({ children }: { children: React.ReactNode }) {
   let pathname = usePathname()
   let isHomePage = pathname === '/'
 
-  // This is a quick fix for the special route, intended to remove the useless navigation
-  let isTranscribe = pathname === '/transcribe'
+  // This is a quick fix for custom routes, intended to remove the useless navigation
+  const customRoutes = ['/transcribe', '/login']
+  let isCustom = customRoutes.some((route) => pathname == route)
 
   return (
     <div className="flex w-full flex-col">
@@ -78,7 +79,7 @@ export function Layout({ children }: { children: React.ReactNode }) {
 
       {isHomePage && <Hero />}
 
-      {!isTranscribe ? (
+      {!isCustom ? (
         <div className="relative mx-auto flex w-full max-w-8xl flex-auto justify-center sm:px-2 lg:px-8 xl:px-12">
           <div className="hidden lg:relative lg:block lg:flex-none">
             <div className="absolute inset-y-0 right-0 w-[50vw] bg-slate-50 dark:hidden" />
@@ -91,7 +92,7 @@ export function Layout({ children }: { children: React.ReactNode }) {
           {children}
         </div>
       ) : (
-        <div className="relative mx-auto flex w-full max-w-8xl flex-auto sm:px-2 lg:px-8 xl:px-12">
+        <div className="relative mx-auto w-full max-w-8xl sm:px-2 lg:px-8 xl:px-12">
           {children}
         </div>
       )}
