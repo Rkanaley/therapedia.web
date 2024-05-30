@@ -6,6 +6,7 @@ const useAudioTranscription = (token: string | null) => {
   const workletNodeRef = useRef<AudioWorkletNode | null>(null)
   const socketRef = useRef<Socket | null>(null)
   const audioBufferRef = useRef<Float32Array[]>([])
+  const mediaStreamRef = useRef<MediaStream | null>(null) // Add mediaStreamRef
 
   const [transcription, setTranscription] = useState('')
   const [isRecording, setIsRecording] = useState(false)
@@ -60,6 +61,8 @@ const useAudioTranscription = (token: string | null) => {
 
     try {
       const stream = await navigator.mediaDevices.getUserMedia({ audio: true })
+      mediaStreamRef.current = stream // Store the media stream
+
       await audioContextRef.current.audioWorklet.addModule('/worklet.js')
       const source = audioContextRef.current.createMediaStreamSource(stream)
 
@@ -87,6 +90,10 @@ const useAudioTranscription = (token: string | null) => {
     if (audioContextRef.current) {
       audioContextRef.current.close()
     }
+    if (mediaStreamRef.current) {
+      mediaStreamRef.current.getTracks().forEach((track) => track.stop()) // Stop all media tracks
+      mediaStreamRef.current = null
+    }
   }
 
   const sendBufferedAudio = () => {
@@ -104,6 +111,10 @@ const useAudioTranscription = (token: string | null) => {
     }
     if (audioContextRef.current) {
       audioContextRef.current.close()
+    }
+    if (mediaStreamRef.current) {
+      mediaStreamRef.current.getTracks().forEach((track) => track.stop()) // Stop all media tracks
+      mediaStreamRef.current = null
     }
     socketRef.current?.disconnect()
     socketRef.current = null // Reset socket to ensure it can be re-initialized
