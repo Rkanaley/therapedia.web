@@ -6,7 +6,7 @@ const useAudioTranscription = (token: string | null) => {
   const workletNodeRef = useRef<AudioWorkletNode | null>(null)
   const socketRef = useRef<Socket | null>(null)
   const audioBufferRef = useRef<Float32Array[]>([])
-  const mediaStreamRef = useRef<MediaStream | null>(null) // Add mediaStreamRef
+  const mediaStreamRef = useRef<MediaStream | null>(null)
 
   const [transcription, setTranscription] = useState('')
   const [isRecording, setIsRecording] = useState(false)
@@ -16,13 +16,11 @@ const useAudioTranscription = (token: string | null) => {
     if (isRecording && token) {
       startRecording().then(() => {
         if (audioContextRef.current) {
-          // Set chunk size
-          const chunkSize = 8800
-          // Initialize socket
+          const chunkSize = 3200
           initializeSocket(token, audioContextRef.current.sampleRate, chunkSize)
         }
       })
-      const intervalId = setInterval(sendBufferedAudio, 500)
+      const intervalId = setInterval(sendBufferedAudio, 5000)
 
       return () => {
         clearInterval(intervalId)
@@ -34,7 +32,6 @@ const useAudioTranscription = (token: string | null) => {
       cleanupResources()
     }
 
-    // Cleanup function for useEffect
     return () => {
       stopRecording()
       cleanupResources()
@@ -103,7 +100,7 @@ const useAudioTranscription = (token: string | null) => {
       audioContextRef.current.close()
     }
     if (mediaStreamRef.current) {
-      mediaStreamRef.current.getTracks().forEach((track) => track.stop()) // Stop all media tracks
+      mediaStreamRef.current.getTracks().forEach((track) => track.stop())
       mediaStreamRef.current = null
     }
   }
@@ -125,11 +122,11 @@ const useAudioTranscription = (token: string | null) => {
       audioContextRef.current.close()
     }
     if (mediaStreamRef.current) {
-      mediaStreamRef.current.getTracks().forEach((track) => track.stop()) // Stop all media tracks
+      mediaStreamRef.current.getTracks().forEach((track) => track.stop())
       mediaStreamRef.current = null
     }
     socketRef.current?.disconnect()
-    socketRef.current = null // Reset socket to ensure it can be re-initialized
+    socketRef.current = null
   }
 
   return { transcription, isRecording, setIsRecording, error }
@@ -151,7 +148,7 @@ const flattenAudioBuffer = (audioBufferArray: Float32Array[]) => {
 }
 
 const convertToPCM = (buffer: Float32Array) => {
-  const pcmData = new Int32Array(buffer.length)
+  const pcmData = new Int16Array(buffer.length)
   for (let i = 0; i < buffer.length; i++) {
     pcmData[i] = Math.max(-1, Math.min(1, buffer[i])) * 0x7fff
   }
