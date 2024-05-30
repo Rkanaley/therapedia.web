@@ -28,7 +28,6 @@ const useAudioTranscription = (token: string | null) => {
       cleanupResources()
     }
 
-    // Cleanup function for useEffect
     return () => {
       stopRecording()
       cleanupResources()
@@ -57,26 +56,26 @@ const useAudioTranscription = (token: string | null) => {
       return
     }
 
-    audioContextRef.current = new window.AudioContext()
+    const audioContext = new window.AudioContext()
+    audioContextRef.current = audioContext
 
     try {
       const stream = await navigator.mediaDevices.getUserMedia({ audio: true })
-      mediaStreamRef.current = stream // Store the media stream
+      mediaStreamRef.current = stream
 
-      await audioContextRef.current.audioWorklet.addModule('/worklet.js')
-      const source = audioContextRef.current.createMediaStreamSource(stream)
+      await audioContext.audioWorklet.addModule('/worklet.js')
+      const source = audioContext.createMediaStreamSource(stream)
 
-      workletNodeRef.current = new AudioWorkletNode(
-        audioContextRef.current,
-        'audio-processor',
-      )
-      workletNodeRef.current.port.onmessage = (event) => {
+      const workletNode = new AudioWorkletNode(audioContext, 'audio-processor')
+      workletNodeRef.current = workletNode
+
+      workletNode.port.onmessage = (event) => {
         const inputData = event.data
         audioBufferRef.current.push(new Float32Array(inputData))
       }
 
-      source.connect(workletNodeRef.current)
-      workletNodeRef.current.connect(audioContextRef.current.destination)
+      source.connect(workletNode)
+      workletNode.connect(audioContext.destination)
     } catch (err) {
       console.error('Error accessing audio devices.', err)
       setError('Error accessing audio devices.')
