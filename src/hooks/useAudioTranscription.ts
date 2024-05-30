@@ -3,7 +3,7 @@ import io, { Socket } from 'socket.io-client'
 
 const useAudioTranscription = (token: string | null) => {
   const audioContextRef = useRef<AudioContext | null>(null)
-  const scriptProcessorRef = useRef<ScriptProcessorNode | null>(null)
+  const workletNodeRef = useRef<AudioWorkletNode | null>(null)
   const socketRef = useRef<Socket | null>(null)
   const audioBufferRef = useRef<Float32Array[]>([])
 
@@ -42,20 +42,21 @@ const useAudioTranscription = (token: string | null) => {
           audio: true,
         })
 
+        await audioContextRef.current.audioWorklet.addModule('/worklet.js')
         const source = audioContextRef.current.createMediaStreamSource(stream)
 
-        scriptProcessorRef.current =
-          audioContextRef.current.createScriptProcessor(4096, 1, 1)
+        workletNodeRef.current = new AudioWorkletNode(
+          audioContextRef.current,
+          'audio-processor',
+        )
 
-        scriptProcessorRef.current.onaudioprocess = (audioProcessingEvent) => {
-          const inputBuffer = audioProcessingEvent.inputBuffer
-          const inputData = inputBuffer.getChannelData(0)
-
+        workletNodeRef.current.port.onmessage = (event) => {
+          const inputData = event.data
           audioBufferRef.current.push(new Float32Array(inputData))
         }
 
-        source.connect(scriptProcessorRef.current)
-        scriptProcessorRef.current.connect(audioContextRef.current.destination)
+        source.connect(workletNodeRef.current)
+        workletNodeRef.current.connect(audioContextRef.current.destination)
       } catch (err) {
         console.error('Error accessing audio devices.', err)
         setError('Error accessing audio devices.')
@@ -63,9 +64,8 @@ const useAudioTranscription = (token: string | null) => {
     }
 
     const stopRecording = () => {
-      if (scriptProcessorRef.current) {
-        scriptProcessorRef.current.disconnect()
-        scriptProcessorRef.current.onaudioprocess = null
+      if (workletNodeRef.current) {
+        workletNodeRef.current.disconnect()
       }
       if (audioContextRef.current) {
         audioContextRef.current.close()
@@ -90,9 +90,8 @@ const useAudioTranscription = (token: string | null) => {
     }
 
     return () => {
-      if (scriptProcessorRef.current) {
-        scriptProcessorRef.current.disconnect()
-        scriptProcessorRef.current.onaudioprocess = null
+      if (workletNodeRef.current) {
+        workletNodeRef.current.disconnect()
       }
 
       if (audioContextRef.current) {
