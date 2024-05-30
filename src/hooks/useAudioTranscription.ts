@@ -12,95 +12,102 @@ const useAudioTranscription = (token: string | null) => {
   const [error, setError] = useState<string | null>(null)
 
   useEffect(() => {
-    if (!token) {
-      setError('No authorisation provided!')
+    if (isRecording && token) {
+      initializeSocket(token)
+      startRecording()
+      const intervalId = setInterval(sendBufferedAudio, 1000)
+
+      return () => {
+        clearInterval(intervalId)
+        stopRecording()
+        cleanupResources()
+      }
+    } else {
+      stopRecording()
+      cleanupResources()
+    }
+
+    // Cleanup function for useEffect
+    return () => {
+      stopRecording()
+      cleanupResources()
+    }
+  }, [isRecording, token])
+
+  const initializeSocket = (token: string) => {
+    if (socketRef.current) {
+      return // Avoid initializing the socket again if it's already initialized
     }
 
     try {
-      socketRef.current = io(getWebSocketUrl(), {
-        query: { token },
+      socketRef.current = io(getWebSocketUrl(), { query: { token } })
+
+      socketRef.current.on('transcription', (transcript: string) => {
+        setTranscription((prev) => `${prev} ${transcript}`)
       })
     } catch (error) {
       setError('Error connecting to the server!')
+    }
+  }
+
+  const startRecording = async () => {
+    if (!navigator.mediaDevices.getUserMedia) {
+      console.error('getUserMedia not supported on your browser!')
       return
     }
 
-    socketRef.current.on('transcription', (transcript: string) => {
-      setTranscription((prev) => prev + ' ' + transcript)
-    })
+    audioContextRef.current = new window.AudioContext()
 
-    const startRecording = async () => {
-      if (!navigator.mediaDevices.getUserMedia) {
-        console.error('getUserMedia not supported on your browser!')
-        return
+    try {
+      const stream = await navigator.mediaDevices.getUserMedia({ audio: true })
+      await audioContextRef.current.audioWorklet.addModule('/worklet.js')
+      const source = audioContextRef.current.createMediaStreamSource(stream)
+
+      workletNodeRef.current = new AudioWorkletNode(
+        audioContextRef.current,
+        'audio-processor',
+      )
+      workletNodeRef.current.port.onmessage = (event) => {
+        const inputData = event.data
+        audioBufferRef.current.push(new Float32Array(inputData))
       }
 
-      audioContextRef.current = new window.AudioContext()
-
-      try {
-        const stream = await navigator.mediaDevices.getUserMedia({
-          audio: true,
-        })
-
-        await audioContextRef.current.audioWorklet.addModule('/worklet.js')
-        const source = audioContextRef.current.createMediaStreamSource(stream)
-
-        workletNodeRef.current = new AudioWorkletNode(
-          audioContextRef.current,
-          'audio-processor',
-        )
-
-        workletNodeRef.current.port.onmessage = (event) => {
-          const inputData = event.data
-          audioBufferRef.current.push(new Float32Array(inputData))
-        }
-
-        source.connect(workletNodeRef.current)
-        workletNodeRef.current.connect(audioContextRef.current.destination)
-      } catch (err) {
-        console.error('Error accessing audio devices.', err)
-        setError('Error accessing audio devices.')
-      }
+      source.connect(workletNodeRef.current)
+      workletNodeRef.current.connect(audioContextRef.current.destination)
+    } catch (err) {
+      console.error('Error accessing audio devices.', err)
+      setError('Error accessing audio devices.')
     }
+  }
 
-    const stopRecording = () => {
-      if (workletNodeRef.current) {
-        workletNodeRef.current.disconnect()
-      }
-      if (audioContextRef.current) {
-        audioContextRef.current.close()
-      }
+  const stopRecording = () => {
+    if (workletNodeRef.current) {
+      workletNodeRef.current.disconnect()
     }
-
-    const sendBufferedAudio = () => {
-      if (audioBufferRef.current.length > 0 && socketRef.current?.connected) {
-        const bufferedData = flattenAudioBuffer(audioBufferRef.current)
-        const int16Array = convertToPCM(bufferedData)
-        socketRef.current.emit('audio', int16Array.buffer)
-        audioBufferRef.current = []
-      }
+    if (audioContextRef.current) {
+      audioContextRef.current.close()
     }
+  }
 
-    if (isRecording) {
-      startRecording()
-      const intervalId = setInterval(sendBufferedAudio, 1000)
-      return () => clearInterval(intervalId)
-    } else {
-      stopRecording()
+  const sendBufferedAudio = () => {
+    if (audioBufferRef.current.length > 0 && socketRef.current?.connected) {
+      const bufferedData = flattenAudioBuffer(audioBufferRef.current)
+      const int16Array = convertToPCM(bufferedData)
+      socketRef.current.emit('audio', int16Array.buffer)
+      audioBufferRef.current = []
     }
+  }
 
-    return () => {
-      if (workletNodeRef.current) {
-        workletNodeRef.current.disconnect()
-      }
-
-      if (audioContextRef.current) {
-        audioContextRef.current.close()
-      }
-
-      socketRef.current?.disconnect()
+  const cleanupResources = () => {
+    if (workletNodeRef.current) {
+      workletNodeRef.current.disconnect()
     }
-  }, [isRecording, token])
+    if (audioContextRef.current) {
+      audioContextRef.current.close()
+    }
+    socketRef.current?.disconnect()
+    socketRef.current = null // Reset socket to ensure it can be re-initialized
+  }
 
   return { transcription, isRecording, setIsRecording, error }
 }
