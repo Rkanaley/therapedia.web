@@ -1,6 +1,26 @@
 import { useEffect, useRef, useState } from 'react'
 import io, { Socket } from 'socket.io-client'
 
+type TranscriptionResults = {
+  Alternatives: [
+    {
+      Items: {
+        Content: string
+        EndTime: number
+        StartTime: number
+        Type: 'pronunciation' | 'punctuation' | string
+        VocabularyFilterMatch: boolean
+      }[]
+      Transcript: string
+    },
+  ]
+  ChannelId: string
+  EndTime: number
+  IsPartial: boolean
+  ResultId: string
+  StartTime: number
+}[]
+
 const useAudioTranscription = (token: string | null) => {
   const audioContextRef = useRef<AudioContext | null>(null)
   const workletNodeRef = useRef<AudioWorkletNode | null>(null)
@@ -8,7 +28,9 @@ const useAudioTranscription = (token: string | null) => {
   const audioBufferRef = useRef<Float32Array[]>([])
   const mediaStreamRef = useRef<MediaStream | null>(null)
 
-  const [transcription, setTranscription] = useState('')
+  const [transcription, setTranscription] = useState<
+    { content: string; id: string }[]
+  >([])
   const [isRecording, setIsRecording] = useState(false)
   const [error, setError] = useState<string | null>(null)
 
@@ -20,7 +42,7 @@ const useAudioTranscription = (token: string | null) => {
           initializeSocket(token, audioContextRef.current.sampleRate, chunkSize)
         }
       })
-      const intervalId = setInterval(sendBufferedAudio, 5000)
+      const intervalId = setInterval(sendBufferedAudio, 2000)
 
       return () => {
         clearInterval(intervalId)
@@ -52,9 +74,48 @@ const useAudioTranscription = (token: string | null) => {
         query: { token, sampleRate, chunkSize },
       })
 
-      socketRef.current.on('transcription', (transcript: string) => {
-        setTranscription((prev) => `${prev} ${transcript}`)
-      })
+      // socketRef.current.on('transcription', (transcript: string) => {
+      //   setTranscription((prev) => `${prev} ${transcript}`)
+      // })
+
+      socketRef.current.on(
+        'transcriptionResults',
+        (transcriptionResults: TranscriptionResults) => {
+          setTranscription((prev) => {
+            const newTranscriptions = [...prev]
+
+            transcriptionResults.forEach((transcriptionResult) => {
+              console.log(transcriptionResult.ResultId)
+              let index = newTranscriptions.findIndex(
+                (t) => t.id === transcriptionResult.ResultId,
+              )
+              if (index === -1) {
+                index = newTranscriptions.length
+              }
+
+              const transcripts = transcriptionResult.Alternatives.map(
+                (alt) => {
+                  return alt.Transcript || ''
+                },
+              )
+                .filter(Boolean)
+                .sort((a, b) => a.length - b.length)
+
+              const longestTranscript = transcripts[transcripts.length - 1]
+
+              newTranscriptions[index] = {
+                content: longestTranscript,
+                id: transcriptionResult.ResultId,
+              }
+
+              // transcriptionResult.Alternatives.forEach((alternative) => {
+              //   newTranscriptions.push(alternative.Transcript)
+              // })
+            })
+            return newTranscriptions
+          })
+        },
+      )
     } catch (error) {
       setError('Error connecting to the server!')
     }

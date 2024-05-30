@@ -50,7 +50,10 @@ export default function Page() {
         >
           Transcription:
         </h2>
-        <p>{transcription}</p>
+
+        {transcription.map((t) => {
+          return <p key={t.id}>{t.content}</p>
+        })}
       </div>
     </div>
   )
