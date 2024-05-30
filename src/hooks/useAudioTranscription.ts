@@ -14,9 +14,15 @@ const useAudioTranscription = (token: string | null) => {
 
   useEffect(() => {
     if (isRecording && token) {
-      initializeSocket(token)
-      startRecording()
-      const intervalId = setInterval(sendBufferedAudio, 1000)
+      startRecording().then(() => {
+        if (audioContextRef.current) {
+          // Set chunk size
+          const chunkSize = 8800
+          // Initialize socket
+          initializeSocket(token, audioContextRef.current.sampleRate, chunkSize)
+        }
+      })
+      const intervalId = setInterval(sendBufferedAudio, 500)
 
       return () => {
         clearInterval(intervalId)
@@ -28,19 +34,26 @@ const useAudioTranscription = (token: string | null) => {
       cleanupResources()
     }
 
+    // Cleanup function for useEffect
     return () => {
       stopRecording()
       cleanupResources()
     }
   }, [isRecording, token])
 
-  const initializeSocket = (token: string) => {
+  const initializeSocket = (
+    token: string,
+    sampleRate: number,
+    chunkSize: number,
+  ) => {
     if (socketRef.current) {
       return // Avoid initializing the socket again if it's already initialized
     }
 
     try {
-      socketRef.current = io(getWebSocketUrl(), { query: { token } })
+      socketRef.current = io(getWebSocketUrl(), {
+        query: { token, sampleRate, chunkSize },
+      })
 
       socketRef.current.on('transcription', (transcript: string) => {
         setTranscription((prev) => `${prev} ${transcript}`)
