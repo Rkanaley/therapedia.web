@@ -17,3 +17,12 @@ export type TranscriptionResults = {
   ResultId: string
   StartTime: number
 }[]
+
+export type Transcription = {
+  id: number
+  userId: number
+  text: string
+  formattedText: string
+  summary: string
+  createdAt: string
+}

@@ -1,4 +1,5 @@
 import axios from 'axios'
+import { Transcription } from '@/types'
 
 const API_URL = process.env.NEXT_PUBLIC_API_URL
 
@@ -61,4 +62,15 @@ export const updateTranscription = async (
       },
     },
   )
+}
+
+export const listTranscriptions = async (token: string) => {
+  const res = await axios.get(`${API_URL}/transcriptions`, {
+    headers: {
+      'Content-Type': 'application/json',
+      Authorization: `Bearer ${token}`,
+    },
+  })
+
+  return res.data as Transcription[]
 }

@@ -1,9 +1,11 @@
 'use client'
 
-import React, { useState } from 'react'
+import React, { useEffect, useState } from 'react'
 import Cookies from 'js-cookie'
 import { Button } from '@/components/Button'
 import useAudioTranscription from '@/hooks/useAudioTranscription'
+import { listTranscriptions } from '@/services/apiService'
+import { Transcription } from '@/types'
 
 export default function Page() {
   const [token, setToken] = useState<string | null>(
@@ -14,6 +16,8 @@ export default function Page() {
 
   const { transcription, isRecording, setIsRecording, error } =
     useAudioTranscription(token)
+
+  const [open, setOpen] = useState(false)
 
   return (
     <div className="mx-4">
@@ -43,6 +47,10 @@ export default function Page() {
           >
             Stop Recording
           </Button>
+
+          <Button variant="primary" onClick={() => setOpen(true)}>
+            View Transcriptions
+          </Button>
         </div>
 
         <h2
@@ -53,6 +61,54 @@ export default function Page() {
 
         {transcription.map((t) => {
           return <p key={t.id}>{t.content}</p>
+        })}
+      </div>
+
+      {open && token && (
+        <MyTranscriptionsModal token={token} onClose={() => setOpen(false)} />
+      )}
+    </div>
+  )
+}
+
+const MyTranscriptionsModal: React.FC<{
+  token: string
+  onClose: () => void
+}> = ({ token, onClose }) => {
+  const [transcriptions, setTranscriptions] = useState<Transcription[]>([])
+
+  useEffect(() => {
+    listTranscriptions(token).then((data) => {
+      setTranscriptions(data)
+    })
+  }, [])
+
+  return (
+    <div
+      className={`fixed inset-0 flex flex-col items-center justify-center bg-black bg-opacity-50 text-slate-900`}
+    >
+      <div className="bg-blue-50  p-4">
+        <div className="mb-4 flex min-w-[700px] items-center justify-between rounded-lg">
+          <h3 className="font-display text-xl tracking-tight text-slate-900">
+            My Transcriptions
+          </h3>
+          <Button onClick={onClose} variant="secondary">
+            Close
+          </Button>
+        </div>
+
+        {transcriptions.reverse().map((t, index) => {
+          const preview = !t.text ? '-' : t.text.slice(0, 40) + '...'
+          const date = new Date(t.createdAt).toLocaleString()
+
+          return (
+            <div key={t.id} className="flex gap-5">
+              <div>{transcriptions.length - index}.</div>
+              <div>{preview}</div>
+              <div>{date}</div>
+              <div>Actions</div>
+            </div>
+          )
         })}
       </div>
     </div>
