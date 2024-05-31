@@ -81,13 +81,13 @@ const MyTranscriptionsModal: React.FC<{
     listTranscriptions(token).then((data) => {
       setTranscriptions(data)
     })
-  }, [])
+  }, [token])
 
   return (
     <div
       className={`fixed inset-0 flex flex-col items-center justify-center bg-black bg-opacity-50 text-slate-900`}
     >
-      <div className="bg-blue-50  p-4">
+      <div className="bg-white p-4">
         <div className="mb-4 flex min-w-[700px] items-center justify-between rounded-lg">
           <h3 className="font-display text-xl tracking-tight text-slate-900">
             My Transcriptions
@@ -97,19 +97,41 @@ const MyTranscriptionsModal: React.FC<{
           </Button>
         </div>
 
-        {transcriptions.reverse().map((t, index) => {
-          const preview = !t.text ? '-' : t.text.slice(0, 40) + '...'
-          const date = new Date(t.createdAt).toLocaleString()
+        <table className="min-w-full divide-y divide-gray-200">
+          <thead>
+            <tr>
+              <th className="bg-gray-50 px-6 py-3 text-left text-xs font-medium uppercase tracking-wider text-gray-500">
+                #
+              </th>
+              <th className="bg-gray-50 px-6 py-3 text-left text-xs font-medium uppercase tracking-wider text-gray-500">
+                Preview
+              </th>
+              <th className="bg-gray-50 px-6 py-3 text-left text-xs font-medium uppercase tracking-wider text-gray-500">
+                Date
+              </th>
+              <th className="bg-gray-50 px-6 py-3 text-left text-xs font-medium uppercase tracking-wider text-gray-500">
+                Actions
+              </th>
+            </tr>
+          </thead>
+          <tbody className="divide-y divide-gray-200 bg-white">
+            {transcriptions.reverse().map((t, index) => {
+              const preview = !t.text ? '-' : t.text.slice(0, 40) + '...'
+              const date = new Date(t.createdAt).toLocaleString()
 
-          return (
-            <div key={t.id} className="flex gap-5">
-              <div>{transcriptions.length - index}.</div>
-              <div>{preview}</div>
-              <div>{date}</div>
-              <div>Actions</div>
-            </div>
-          )
-        })}
+              return (
+                <tr key={t.id}>
+                  <td className="whitespace-nowrap px-6 py-4">
+                    {transcriptions.length - index}.
+                  </td>
+                  <td className="whitespace-nowrap px-6 py-4">{preview}</td>
+                  <td className="whitespace-nowrap px-6 py-4">{date}</td>
+                  <td className="whitespace-nowrap px-6 py-4">Actions</td>
+                </tr>
+              )
+            })}
+          </tbody>
+        </table>
       </div>
     </div>
   )
