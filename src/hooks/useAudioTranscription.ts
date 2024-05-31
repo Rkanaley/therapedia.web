@@ -1,25 +1,7 @@
 import { useEffect, useRef, useState } from 'react'
 import io, { Socket } from 'socket.io-client'
-
-type TranscriptionResults = {
-  Alternatives: [
-    {
-      Items: {
-        Content: string
-        EndTime: number
-        StartTime: number
-        Type: 'pronunciation' | 'punctuation' | string
-        VocabularyFilterMatch: boolean
-      }[]
-      Transcript: string
-    },
-  ]
-  ChannelId: string
-  EndTime: number
-  IsPartial: boolean
-  ResultId: string
-  StartTime: number
-}[]
+import { TranscriptionResults } from '@/types'
+import * as apiService from '@/services/apiService'
 
 const useAudioTranscription = (token: string | null) => {
   const audioContextRef = useRef<AudioContext | null>(null)
@@ -27,12 +9,15 @@ const useAudioTranscription = (token: string | null) => {
   const socketRef = useRef<Socket | null>(null)
   const audioBufferRef = useRef<Float32Array[]>([])
   const mediaStreamRef = useRef<MediaStream | null>(null)
+  const [transcriptionId, setTranscriptionId] = useState<number | undefined>()
 
   const [transcription, setTranscription] = useState<
     { content: string; id: string }[]
   >([])
   const [isRecording, setIsRecording] = useState(false)
   const [error, setError] = useState<string | null>(null)
+
+  const debouncerRef = useRef<NodeJS.Timeout | null>(null)
 
   useEffect(() => {
     if (isRecording && token) {
@@ -42,12 +27,14 @@ const useAudioTranscription = (token: string | null) => {
           initializeSocket(token, audioContextRef.current.sampleRate, chunkSize)
         }
       })
-      const intervalId = setInterval(sendBufferedAudio, 2000)
+
+      const sendIntervalId = setInterval(sendBufferedAudio, 2 * 1000)
 
       return () => {
-        clearInterval(intervalId)
+        clearInterval(sendIntervalId)
         stopRecording()
         cleanupResources()
+        saveTranscriptionInDB()
       }
     } else {
       stopRecording()
@@ -59,6 +46,24 @@ const useAudioTranscription = (token: string | null) => {
       cleanupResources()
     }
   }, [isRecording, token])
+
+  useEffect(() => {
+    if (isRecording && transcriptionId) {
+      if (debouncerRef.current) {
+        clearTimeout(debouncerRef.current)
+      }
+
+      debouncerRef.current = setTimeout(() => {
+        saveTranscriptionInDB()
+      }, 2000)
+
+      return () => {
+        if (debouncerRef.current) {
+          clearTimeout(debouncerRef.current)
+        }
+      }
+    }
+  }, [transcription])
 
   const initializeSocket = (
     token: string,
@@ -74,10 +79,6 @@ const useAudioTranscription = (token: string | null) => {
         query: { token, sampleRate, chunkSize },
       })
 
-      // socketRef.current.on('transcription', (transcript: string) => {
-      //   setTranscription((prev) => `${prev} ${transcript}`)
-      // })
-
       socketRef.current.on(
         'transcriptionResults',
         (transcriptionResults: TranscriptionResults) => {
@@ -85,7 +86,6 @@ const useAudioTranscription = (token: string | null) => {
             const newTranscriptions = [...prev]
 
             transcriptionResults.forEach((transcriptionResult) => {
-              console.log(transcriptionResult.ResultId)
               let index = newTranscriptions.findIndex(
                 (t) => t.id === transcriptionResult.ResultId,
               )
@@ -107,10 +107,6 @@ const useAudioTranscription = (token: string | null) => {
                 content: longestTranscript,
                 id: transcriptionResult.ResultId,
               }
-
-              // transcriptionResult.Alternatives.forEach((alternative) => {
-              //   newTranscriptions.push(alternative.Transcript)
-              // })
             })
             return newTranscriptions
           })
@@ -147,9 +143,12 @@ const useAudioTranscription = (token: string | null) => {
 
       source.connect(workletNode)
       workletNode.connect(audioContext.destination)
+
+      const id = await createTranscriptionInDb()
+      setTranscriptionId(id)
     } catch (err) {
-      console.error('Error accessing audio devices.', err)
-      setError('Error accessing audio devices.')
+      console.error('Unexpected error occurred', err)
+      setError('Unexpected error occurred')
     }
   }
 
@@ -188,6 +187,31 @@ const useAudioTranscription = (token: string | null) => {
     }
     socketRef.current?.disconnect()
     socketRef.current = null
+  }
+
+  const createTranscriptionInDb = async (): Promise<number> => {
+    if (transcriptionId) {
+      return transcriptionId
+    }
+
+    if (!token) {
+      throw new Error('No token provided')
+    }
+
+    return await apiService.createTranscription(token)
+  }
+
+  const saveTranscriptionInDB = async (isFinalUpdate = false) => {
+    if (!transcriptionId || !token) {
+      return
+    }
+
+    const latestTranscription = transcription.map((t) => t.content).join('\n')
+    await apiService.updateTranscription(
+      token,
+      transcriptionId,
+      latestTranscription,
+    )
   }
 
   return { transcription, isRecording, setIsRecording, error }

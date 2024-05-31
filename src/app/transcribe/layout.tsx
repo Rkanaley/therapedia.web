@@ -3,6 +3,7 @@
 import React, { ReactNode, useEffect, useState } from 'react'
 import Cookies from 'js-cookie'
 import { useRouter } from 'next/navigation'
+import * as apiService from '@/services/apiService'
 
 const Layout: React.FC<{ children: ReactNode }> = ({ children }) => {
   const router = useRouter()
@@ -18,16 +19,10 @@ const Layout: React.FC<{ children: ReactNode }> = ({ children }) => {
       return
     }
 
-    fetch(`${process.env.NEXT_PUBLIC_API_URL}/auth/validate`, {
-      method: 'POST',
-      headers: {
-        'Content-Type': 'application/json',
-        Authorization: `Bearer ${token}`,
-      },
-      body: JSON.stringify({ token }),
-    })
-      .then((response) => {
-        if (response.ok) {
+    apiService
+      .validateToken(token)
+      .then((isValid) => {
+        if (isValid) {
           setIsAuthenticated(true)
         } else {
           Cookies.remove('token')

@@ -1,10 +1,10 @@
 'use client'
 
 import { useState } from 'react'
-import axios from 'axios'
 import { Button } from '@/components/Button'
 import { useRouter } from 'next/navigation'
 import Cookies from 'js-cookie'
+import * as apiService from '@/services/apiService'
 
 export default function LoginPage() {
   const router = useRouter()
@@ -14,15 +14,7 @@ export default function LoginPage() {
 
   const handleLogin = async () => {
     try {
-      const response = await axios.post(
-        `${process.env.NEXT_PUBLIC_API_URL}/auth/login`,
-        {
-          email,
-          password,
-        },
-      )
-
-      const { token } = response.data
+      const { token } = await apiService.login(email, password)
 
       if (!token) {
         console.error('Token not found in response')
