@@ -74,3 +74,21 @@ export const listTranscriptions = async (token: string) => {
 
   return res.data as Transcription[]
 }
+
+export const processTranscription = async (
+  token: string,
+  transcriptionId: number,
+): Promise<{ summary: string; formattedText: string }> => {
+  const response = await axios.post(
+    `${API_URL}/transcriptions/${transcriptionId}/process`,
+    { text: '' },
+    {
+      headers: {
+        'Content-Type': 'application/json',
+        Authorization: `Bearer ${token}`,
+      },
+    },
+  )
+
+  return response.data
+}

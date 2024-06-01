@@ -6,6 +6,7 @@ import { Button } from '@/components/Button'
 import useAudioTranscription from '@/hooks/useAudioTranscription'
 import { listTranscriptions } from '@/services/apiService'
 import { Transcription } from '@/types'
+import * as apiService from '@/services/apiService'
 
 export default function Page() {
   const [token, setToken] = useState<string | null>(
@@ -83,11 +84,28 @@ const MyTranscriptionsModal: React.FC<{
     })
   }, [token])
 
+  const downloadText = (filename: string, text: string) => {
+    const element = document.createElement('a')
+    const file = new Blob([text], { type: 'text/plain' })
+    element.href = URL.createObjectURL(file)
+    element.download = filename
+    document.body.appendChild(element)
+    element.click()
+  }
+
+  const onProcess = async (id: number) => {
+    const data = await apiService.processTranscription(token, id)
+    const newTranscriptions = [...transcriptions]
+    const index = newTranscriptions.findIndex((t) => t.id === id)
+    newTranscriptions[index] = { ...newTranscriptions[index], ...data }
+    setTranscriptions(newTranscriptions)
+  }
+
   return (
     <div
       className={`fixed inset-0 flex flex-col items-center justify-center bg-black bg-opacity-50 text-slate-900`}
     >
-      <div className="bg-white p-4">
+      <div className="bg-blue-50  p-4">
         <div className="mb-4 flex min-w-[700px] items-center justify-between rounded-lg">
           <h3 className="font-display text-xl tracking-tight text-slate-900">
             My Transcriptions
@@ -126,7 +144,36 @@ const MyTranscriptionsModal: React.FC<{
                   </td>
                   <td className="whitespace-nowrap px-6 py-4">{preview}</td>
                   <td className="whitespace-nowrap px-6 py-4">{date}</td>
-                  <td className="whitespace-nowrap px-6 py-4">Actions</td>
+                  <td className="whitespace-nowrap px-6 py-4">
+                    {t.summary && (
+                      <Button
+                        variant="secondary"
+                        onClick={() =>
+                          downloadText(`summary_${t.id}.txt`, t.summary)
+                        }
+                      >
+                        Get Summary
+                      </Button>
+                    )}
+                    {t.formattedText && (
+                      <Button
+                        variant="secondary"
+                        onClick={() =>
+                          downloadText(`formatted_${t.id}.txt`, t.formattedText)
+                        }
+                      >
+                        Get Formatted Text
+                      </Button>
+                    )}
+                    {(!t.formattedText || !t.summary) && (
+                      <Button
+                        variant="secondary"
+                        onClick={() => onProcess(t.id)}
+                      >
+                        Process
+                      </Button>
+                    )}
+                  </td>
                 </tr>
               )
             })}
