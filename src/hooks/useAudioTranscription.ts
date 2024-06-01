@@ -28,7 +28,7 @@ const useAudioTranscription = (token: string | null) => {
         }
       })
 
-      const sendIntervalId = setInterval(sendBufferedAudio, 2000)
+      const sendIntervalId = setInterval(sendBufferedAudio, 2500)
 
       return () => {
         clearInterval(sendIntervalId)

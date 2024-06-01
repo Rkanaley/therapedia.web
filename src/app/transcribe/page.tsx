@@ -9,40 +9,31 @@ import { Transcription } from '@/types'
 import * as apiService from '@/services/apiService'
 import clsx from 'clsx'
 
-const capitalize = (s: string) => {
-  return s.charAt(0).toUpperCase() + s.slice(1)
-}
+const capitalize = (s: string) => s.charAt(0).toUpperCase() + s.slice(1)
 
 const getParagraphs = (transcription: string[]) => {
   const paragraphs: string[] = []
   let currentParagraph = ''
 
   const includeParagraph = () => {
-    paragraphs.push(capitalize(currentParagraph.toLowerCase()))
-    currentParagraph = ''
+    if (currentParagraph) {
+      paragraphs.push(capitalize(currentParagraph.toLowerCase()))
+      currentParagraph = ''
+    }
   }
 
-  for (const rawText of transcription) {
-    if (!rawText) {
-      continue
-    }
-
+  transcription.forEach((rawText) => {
     const textBlock = rawText.trim()
-
-    if (!currentParagraph) {
-      currentParagraph = textBlock
-    } else {
-      currentParagraph += ' ' + textBlock
+    if (textBlock) {
+      currentParagraph += (currentParagraph ? ' ' : '') + textBlock
+      // if (currentParagraph.length >= 20 && currentParagraph.endsWith('.')) {
+      if (currentParagraph.endsWith('.')) {
+        includeParagraph()
+      }
     }
+  })
 
-    if (currentParagraph.length >= 20 && currentParagraph.endsWith('.')) {
-      includeParagraph()
-    }
-  }
-
-  if (currentParagraph) {
-    includeParagraph()
-  }
+  includeParagraph()
 
   return paragraphs
 }
@@ -51,12 +42,10 @@ export default function Page() {
   const [token, setToken] = useState<string | null>(
     Cookies.get('token') || null,
   )
-  // We assume it is valid, but the backend will reject it if it is not
   const hasToken = !!token
 
   const { transcription, isRecording, setIsRecording, error } =
     useAudioTranscription(token)
-
   const [open, setOpen] = useState(false)
 
   const paragraphs = getParagraphs(transcription.map((t) => t.content))
@@ -70,7 +59,7 @@ export default function Page() {
       {error && <div className="mb-4 text-red-500">{error}</div>}
 
       <div style={{ opacity: hasToken ? 1 : 0.5 }}>
-        <div className="mb-4 flex justify-start gap-4 ">
+        <div className="mb-4 flex justify-start gap-4">
           <Button
             variant={
               !hasToken ? 'secondary' : isRecording ? 'secondary' : 'primary'
@@ -89,7 +78,6 @@ export default function Page() {
           >
             Stop Recording
           </Button>
-
           <Button variant="primary" onClick={() => setOpen(true)}>
             View Transcriptions
           </Button>
@@ -105,21 +93,18 @@ export default function Page() {
             >
               Transcription
             </p>
-
             <div
               className={clsx(
                 'prose mt-2.5',
                 'text-sky-800 [--tw-prose-background:theme(colors.sky.50)] prose-a:text-sky-900 prose-code:text-sky-900 dark:text-slate-300 dark:prose-code:text-slate-300',
               )}
             >
-              {paragraphs.length !== 0
-                ? paragraphs.map((paragraph, index) => {
-                    return (
-                      <p key={index} className="mb-1 mt-0">
-                        {paragraph}
-                      </p>
-                    )
-                  })
+              {paragraphs.length
+                ? paragraphs.map((paragraph, index) => (
+                    <p key={index} className="mb-1 mt-0">
+                      {paragraph}
+                    </p>
+                  ))
                 : 'Your transcription will appear here. Start recording to see it in action!'}
             </div>
           </div>
