@@ -23,12 +23,12 @@ const useAudioTranscription = (token: string | null) => {
     if (isRecording && token) {
       startRecording().then(() => {
         if (audioContextRef.current) {
-          const chunkSize = 3200
+          const chunkSize = 6400
           initializeSocket(token, audioContextRef.current.sampleRate, chunkSize)
         }
       })
 
-      const sendIntervalId = setInterval(sendBufferedAudio, 2 * 1000)
+      const sendIntervalId = setInterval(sendBufferedAudio, 2000)
 
       return () => {
         clearInterval(sendIntervalId)

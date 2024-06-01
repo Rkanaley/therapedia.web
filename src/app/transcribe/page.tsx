@@ -7,6 +7,45 @@ import useAudioTranscription from '@/hooks/useAudioTranscription'
 import { listTranscriptions } from '@/services/apiService'
 import { Transcription } from '@/types'
 import * as apiService from '@/services/apiService'
+import clsx from 'clsx'
+
+const capitalize = (s: string) => {
+  return s.charAt(0).toUpperCase() + s.slice(1)
+}
+
+const getParagraphs = (transcription: string[]) => {
+  const paragraphs: string[] = []
+  let currentParagraph = ''
+
+  const includeParagraph = () => {
+    paragraphs.push(capitalize(currentParagraph.toLowerCase()))
+    currentParagraph = ''
+  }
+
+  for (const rawText of transcription) {
+    if (!rawText) {
+      continue
+    }
+
+    const textBlock = rawText.trim()
+
+    if (!currentParagraph) {
+      currentParagraph = textBlock
+    } else {
+      currentParagraph += ' ' + textBlock
+    }
+
+    if (currentParagraph.length >= 20 && currentParagraph.endsWith('.')) {
+      includeParagraph()
+    }
+  }
+
+  if (currentParagraph) {
+    includeParagraph()
+  }
+
+  return paragraphs
+}
 
 export default function Page() {
   const [token, setToken] = useState<string | null>(
@@ -20,6 +59,8 @@ export default function Page() {
 
   const [open, setOpen] = useState(false)
 
+  const paragraphs = getParagraphs(transcription.map((t) => t.content))
+
   return (
     <div className="mx-4">
       <h1 className="mb-5 mt-5 font-display text-3xl tracking-tight text-slate-900 dark:text-white">
@@ -28,8 +69,8 @@ export default function Page() {
 
       {error && <div className="mb-4 text-red-500">{error}</div>}
 
-      <div className="max-w-lg" style={{ opacity: hasToken ? 1 : 0.5 }}>
-        <div className="mb-4 flex justify-start gap-4">
+      <div style={{ opacity: hasToken ? 1 : 0.5 }}>
+        <div className="mb-4 flex justify-start gap-4 ">
           <Button
             variant={
               !hasToken ? 'secondary' : isRecording ? 'secondary' : 'primary'
@@ -54,15 +95,35 @@ export default function Page() {
           </Button>
         </div>
 
-        <h2
-          className={`mb-5 font-display text-2xl tracking-tight text-slate-900 dark:text-white`}
-        >
-          Transcription:
-        </h2>
+        <div className="my-8 flex min-h-[400px] max-w-2xl rounded-3xl bg-sky-50 p-6 dark:bg-slate-800/60 dark:ring-1 dark:ring-slate-300/10">
+          <div className="flex-auto">
+            <p
+              className={clsx(
+                'm-0 font-display text-xl',
+                'text-sky-900 dark:text-sky-400',
+              )}
+            >
+              Transcription
+            </p>
 
-        {transcription.map((t) => {
-          return <p key={t.id}>{t.content}</p>
-        })}
+            <div
+              className={clsx(
+                'prose mt-2.5',
+                'text-sky-800 [--tw-prose-background:theme(colors.sky.50)] prose-a:text-sky-900 prose-code:text-sky-900 dark:text-slate-300 dark:prose-code:text-slate-300',
+              )}
+            >
+              {paragraphs.length !== 0
+                ? paragraphs.map((paragraph, index) => {
+                    return (
+                      <p key={index} className="mb-1 mt-0">
+                        {paragraph}
+                      </p>
+                    )
+                  })
+                : 'Your transcription will appear here. Start recording to see it in action!'}
+            </div>
+          </div>
+        </div>
       </div>
 
       {open && token && (
@@ -153,8 +214,7 @@ const MyTranscriptionsModal: React.FC<{
                 return (
                   <tr>
                     <td className="whitespace-nowrap px-2 py-2">
-                      {/*{transcriptions.length - index}.*/}
-                      {index + 1}
+                      {transcriptions.length - index}.
                     </td>
                     <td className="whitespace-nowrap px-2 py-2">{preview}</td>
                     <td className="whitespace-nowrap px-2 py-2">{date}</td>
