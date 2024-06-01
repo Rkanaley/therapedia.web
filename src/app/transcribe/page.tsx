@@ -8,35 +8,7 @@ import { listTranscriptions } from '@/services/apiService'
 import { Transcription } from '@/types'
 import * as apiService from '@/services/apiService'
 import clsx from 'clsx'
-
-const capitalize = (s: string) => s.charAt(0).toUpperCase() + s.slice(1)
-
-const getParagraphs = (transcription: string[]) => {
-  const paragraphs: string[] = []
-  let currentParagraph = ''
-
-  const includeParagraph = () => {
-    if (currentParagraph) {
-      paragraphs.push(capitalize(currentParagraph.toLowerCase()))
-      currentParagraph = ''
-    }
-  }
-
-  transcription.forEach((rawText) => {
-    const textBlock = rawText.trim()
-    if (textBlock) {
-      currentParagraph += (currentParagraph ? ' ' : '') + textBlock
-      // if (currentParagraph.length >= 20 && currentParagraph.endsWith('.')) {
-      if (currentParagraph.endsWith('.')) {
-        includeParagraph()
-      }
-    }
-  })
-
-  includeParagraph()
-
-  return paragraphs
-}
+import { getParagraphs } from '@/services/transcriptionParser'
 
 export default function Page() {
   const [token, setToken] = useState<string | null>(
@@ -162,7 +134,7 @@ const MyTranscriptionsModal: React.FC<{
     <div
       className={`fixed inset-0 flex flex-col items-center justify-center overflow-auto bg-black bg-opacity-50 text-slate-900`}
     >
-      <div className="flex max-h-[80vh] flex-col bg-blue-50 p-4">
+      <div className="flex max-h-[80vh] min-h-[400px] flex-col bg-blue-50 p-4">
         <div className="mb-4 flex min-w-[1000px] items-center justify-between rounded-lg">
           <h3 className="font-display text-xl tracking-tight text-slate-900">
             My Transcriptions

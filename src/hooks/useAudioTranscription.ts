@@ -2,6 +2,7 @@ import { useEffect, useRef, useState } from 'react'
 import io, { Socket } from 'socket.io-client'
 import { TranscriptionResults } from '@/types'
 import * as apiService from '@/services/apiService'
+import { getParagraphs } from '@/services/transcriptionParser'
 
 const useAudioTranscription = (token: string | null) => {
   const audioContextRef = useRef<AudioContext | null>(null)
@@ -206,7 +207,9 @@ const useAudioTranscription = (token: string | null) => {
       return
     }
 
-    const latestTranscription = transcription.map((t) => t.content).join('\n')
+    const paragraphs = getParagraphs(transcription.map((t) => t.content))
+    const latestTranscription = paragraphs.join('\n')
+
     await apiService.updateTranscription(
       token,
       transcriptionId,
