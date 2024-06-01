@@ -185,6 +185,20 @@ const MyTranscriptionsModal: React.FC<{
                             Process
                           </Button>
 
+                          {t.text && (
+                            <Button
+                              variant="link"
+                              onClick={() =>
+                                downloadText(
+                                  `transcription_${t.id}.txt`,
+                                  t.text,
+                                )
+                              }
+                            >
+                              Raw
+                            </Button>
+                          )}
+
                           {t.summary && (
                             <Button
                               variant="link"
