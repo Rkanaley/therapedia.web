@@ -78,7 +78,10 @@ export const listTranscriptions = async (token: string) => {
 export const processTranscription = async (
   token: string,
   transcriptionId: number,
-): Promise<{ summary: string; formattedText: string }> => {
+): Promise<{
+  message: 'string'
+  result: { summary: string; formattedText: string }
+}> => {
   const response = await axios.post(
     `${API_URL}/transcriptions/${transcriptionId}/process`,
     { text: '' },

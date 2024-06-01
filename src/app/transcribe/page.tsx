@@ -95,18 +95,29 @@ const MyTranscriptionsModal: React.FC<{
 
   const onProcess = async (id: number) => {
     const data = await apiService.processTranscription(token, id)
-    const newTranscriptions = [...transcriptions]
-    const index = newTranscriptions.findIndex((t) => t.id === id)
-    newTranscriptions[index] = { ...newTranscriptions[index], ...data }
-    setTranscriptions(newTranscriptions)
+
+    const { formattedText, summary } = data.result
+
+    setTranscriptions((prevTranscriptions) => {
+      const newTranscriptions = [...prevTranscriptions]
+
+      const index = newTranscriptions.findIndex((t) => t.id === id)
+      newTranscriptions[index] = {
+        ...newTranscriptions[index],
+        formattedText,
+        summary,
+      }
+
+      return newTranscriptions
+    })
   }
 
   return (
     <div
-      className={`fixed inset-0 flex flex-col items-center justify-center bg-black bg-opacity-50 text-slate-900`}
+      className={`fixed inset-0 flex flex-col items-center justify-center overflow-auto bg-black bg-opacity-50 text-slate-900`}
     >
-      <div className="bg-blue-50  p-4">
-        <div className="mb-4 flex min-w-[700px] items-center justify-between rounded-lg">
+      <div className="flex max-h-[80vh] flex-col bg-blue-50 p-4">
+        <div className="mb-4 flex min-w-[1000px] items-center justify-between rounded-lg">
           <h3 className="font-display text-xl tracking-tight text-slate-900">
             My Transcriptions
           </h3>
@@ -115,70 +126,81 @@ const MyTranscriptionsModal: React.FC<{
           </Button>
         </div>
 
-        <table className="min-w-full divide-y divide-gray-200">
-          <thead>
-            <tr>
-              <th className="bg-gray-50 px-6 py-3 text-left text-xs font-medium uppercase tracking-wider text-gray-500">
-                #
-              </th>
-              <th className="bg-gray-50 px-6 py-3 text-left text-xs font-medium uppercase tracking-wider text-gray-500">
-                Preview
-              </th>
-              <th className="bg-gray-50 px-6 py-3 text-left text-xs font-medium uppercase tracking-wider text-gray-500">
-                Date
-              </th>
-              <th className="bg-gray-50 px-6 py-3 text-left text-xs font-medium uppercase tracking-wider text-gray-500">
-                Actions
-              </th>
-            </tr>
-          </thead>
-          <tbody className="divide-y divide-gray-200 bg-white">
-            {transcriptions.reverse().map((t, index) => {
-              const preview = !t.text ? '-' : t.text.slice(0, 40) + '...'
-              const date = new Date(t.createdAt).toLocaleString()
+        <div className="flex-1 overflow-y-scroll">
+          <table className="min-w-full divide-y divide-gray-200">
+            <thead>
+              <tr>
+                <th className="bg-gray-50 px-2 py-2 text-left text-xs font-medium uppercase tracking-wider text-gray-500">
+                  #
+                </th>
+                <th className="bg-gray-50 px-2 py-2 text-left text-xs font-medium uppercase tracking-wider text-gray-500">
+                  Preview
+                </th>
+                <th className="bg-gray-50 px-2 py-2 text-left text-xs font-medium uppercase tracking-wider text-gray-500">
+                  Date
+                </th>
+                <th className="bg-gray-50 px-2 py-2 text-left text-xs font-medium uppercase tracking-wider text-gray-500">
+                  Actions
+                </th>
+              </tr>
+            </thead>
+            <tbody className="divide-y divide-gray-200 bg-white">
+              {transcriptions.map((t, index) => {
+                const preview = !t.text ? '-' : t.text.slice(0, 40) + '...'
+                const fullDate = new Date(t.createdAt).toLocaleString()
+                const date = fullDate.slice(0, fullDate.length - 3)
 
-              return (
-                <tr key={t.id}>
-                  <td className="whitespace-nowrap px-6 py-4">
-                    {transcriptions.length - index}.
-                  </td>
-                  <td className="whitespace-nowrap px-6 py-4">{preview}</td>
-                  <td className="whitespace-nowrap px-6 py-4">{date}</td>
-                  <td className="whitespace-nowrap px-6 py-4">
-                    {t.summary && (
-                      <Button
-                        variant="secondary"
-                        onClick={() =>
-                          downloadText(`summary_${t.id}.txt`, t.summary)
-                        }
-                      >
-                        Get Summary
-                      </Button>
-                    )}
-                    {t.formattedText && (
-                      <Button
-                        variant="secondary"
-                        onClick={() =>
-                          downloadText(`formatted_${t.id}.txt`, t.formattedText)
-                        }
-                      >
-                        Get Formatted Text
-                      </Button>
-                    )}
-                    {(!t.formattedText || !t.summary) && (
-                      <Button
-                        variant="secondary"
-                        onClick={() => onProcess(t.id)}
-                      >
-                        Process
-                      </Button>
-                    )}
-                  </td>
-                </tr>
-              )
-            })}
-          </tbody>
-        </table>
+                return (
+                  <tr>
+                    <td className="whitespace-nowrap px-2 py-2">
+                      {/*{transcriptions.length - index}.*/}
+                      {index + 1}
+                    </td>
+                    <td className="whitespace-nowrap px-2 py-2">{preview}</td>
+                    <td className="whitespace-nowrap px-2 py-2">{date}</td>
+                    <td className="flex items-center gap-2 whitespace-nowrap px-2 py-2">
+                      {t.text && (
+                        <>
+                          <Button
+                            variant="small"
+                            onClick={() => onProcess(t.id)}
+                          >
+                            Process
+                          </Button>
+
+                          {t.summary && (
+                            <Button
+                              variant="link"
+                              onClick={() =>
+                                downloadText(`summary_${t.id}.txt`, t.summary)
+                              }
+                            >
+                              Summary
+                            </Button>
+                          )}
+
+                          {t.formattedText && (
+                            <Button
+                              variant="link"
+                              onClick={() =>
+                                downloadText(
+                                  `formatted_${t.id}.txt`,
+                                  t.formattedText,
+                                )
+                              }
+                            >
+                              Formatted
+                            </Button>
+                          )}
+                        </>
+                      )}
+                    </td>
+                  </tr>
+                )
+              })}
+            </tbody>
+          </table>
+        </div>
       </div>
     </div>
   )
