@@ -1,8 +1,8 @@
 ---
-title: Writing plugins
+title: Understanding AI Hallucinations
 nextjs:
   metadata:
-    title: Writing plugins
+    title: Understanding AI Hallucinations
     description: Quidem magni aut exercitationem maxime rerum eos.
 ---
 
