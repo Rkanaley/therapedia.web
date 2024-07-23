@@ -9,7 +9,7 @@ import { Hero } from '@/components/Hero'
 import { Logo } from '@/components/Logo'
 import { MobileNavigation } from '@/components/MobileNavigation'
 import { Navigation } from '@/components/Navigation'
-import { Search } from '@/components/Search'
+//import { Search } from '@/components/Search'
 import { ThemeSelector } from '@/components/ThemeSelector'
 
 function GitHubIcon(props: React.ComponentPropsWithoutRef<'svg'>) {
@@ -47,13 +47,13 @@ function Header() {
         <MobileNavigation />
       </div>
       <div className="relative flex flex-grow basis-0 items-center">
-        <Link href="/" aria-label="Home page">
+        <Link href="https://therapedia.ai" aria-label="Therapedia homepage">
           <Logo className="hidden h-9 w-auto fill-slate-700 lg:block dark:fill-sky-100" />
         </Link>
       </div>
-      <div className="-my-5 mr-6 sm:mr-8 md:mr-0">
+      {/*<div className="-my-5 mr-6 sm:mr-8 md:mr-0">
         <Search />
-      </div>
+      </div>*/}
       <div className="relative flex basis-0 justify-end gap-6 sm:gap-8 md:flex-grow">
         <ThemeSelector className="relative z-10" />
         {/*<Link href="https://github.com" className="group" aria-label="GitHub">*/}
