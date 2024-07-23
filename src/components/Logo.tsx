@@ -28,7 +28,6 @@ export function Logo(props: React.ComponentPropsWithoutRef<'svg'>) {
   )
 }
 */
-import React from 'react';
 
 function LogomarkPaths() {
   return (
