@@ -1,4 +1,4 @@
-function LogomarkPaths() {
+/*function LogomarkPaths() {
   return (
     <g fill="none" stroke="#38BDF8" strokeLinejoin="round" strokeWidth={3}>
       <path d="M10.308 5L18 17.5 10.308 30 2.615 17.5 10.308 5z" />
@@ -26,4 +26,12 @@ export function Logo(props: React.ComponentPropsWithoutRef<'svg'>) {
     //<img src="/images/image.png" alt="Logo" {...props} />
     
   )
+}
+*/
+import React from 'react';
+
+export function Logo(props: React.ComponentPropsWithoutRef<'img'>) {
+  return (
+    <img src="/images/image.png" alt="Logo" {...props} />
+  );
 }
