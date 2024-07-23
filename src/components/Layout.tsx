@@ -6,7 +6,6 @@ import { usePathname } from 'next/navigation'
 import clsx from 'clsx'
 
 import { Hero } from '@/components/Hero'
-//import { Logo, Logomark } from '@/components/Logo'
 import { Logo } from '@/components/Logo'
 import { MobileNavigation } from '@/components/MobileNavigation'
 import { Navigation } from '@/components/Navigation'
@@ -49,7 +48,6 @@ function Header() {
       </div>
       <div className="relative flex flex-grow basis-0 items-center">
         <Link href="/" aria-label="Home page">
-          {/*<Logomark className="h-9 w-9 lg:hidden" />*/}
           <Logo className="hidden h-9 w-auto fill-slate-700 lg:block dark:fill-sky-100" />
         </Link>
       </div>
