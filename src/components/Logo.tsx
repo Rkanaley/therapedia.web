@@ -17,8 +17,8 @@ function LogomarkPaths() {
   )
 }*/
 
-export function Logo(props: React.ComponentPropsWithoutRef<'img'>) {
-  return (
+//export function Logo(props: React.ComponentPropsWithoutRef<'img'>) {
+  //return (
     /*<svg aria-hidden="true" viewBox="0 0 227 36" fill="none" {...props}>
       <LogomarkPaths />
       <text x="45" y="24" fontSize={20} fontWeight="bold" fill="#334155">
@@ -27,5 +27,5 @@ export function Logo(props: React.ComponentPropsWithoutRef<'img'>) {
     //</svg>
     //<img src="/images/image.png" alt="Logo" {...props} />
     
-  );
-}
+//  );
+//}
