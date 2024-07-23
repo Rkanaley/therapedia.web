@@ -2,7 +2,7 @@ import React from 'react';
 
 export function Logo(props: React.ComponentPropsWithoutRef<'img'>) {
   return (
-    <img src="images\image.png" alt="Logo" {...props} />
+    <img src="@/images/image.png" alt="Logo" {...props} />
   );
 }
 
