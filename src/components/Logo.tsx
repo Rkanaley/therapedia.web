@@ -15,15 +15,15 @@ export function Logomark(props: React.ComponentPropsWithoutRef<'svg'>) {
   )
 }
 
-export function Logo(props: React.ComponentPropsWithoutRef<'svg'>) {
+export function Logo(props: React.ComponentPropsWithoutRef<'img'>) {
   return (
-    <svg aria-hidden="true" viewBox="0 0 227 36" fill="none" {...props}>
+    /*<svg aria-hidden="true" viewBox="0 0 227 36" fill="none" {...props}>
       <LogomarkPaths />
       <text x="45" y="24" fontSize={20} fontWeight="bold" fill="#334155">
       </text>
       {<path d="/images/image.png" />}
-    </svg>
-    //<img src="/images/image.png" alt="Logo" {...props} />
+    </svg>*/
+    <img src="/images/image.png" alt="Logo" {...props} />
     
   )
 }
