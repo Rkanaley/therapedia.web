@@ -6,7 +6,7 @@ import { usePathname } from 'next/navigation'
 import clsx from 'clsx'
 
 import { Hero } from '@/components/Hero'
-import { Logo } from '@/components/Logo'
+import { Logo, Logomark } from '@/components/Logo'
 import { MobileNavigation } from '@/components/MobileNavigation'
 import { Navigation } from '@/components/Navigation'
 //import { Search } from '@/components/Search'
@@ -49,6 +49,7 @@ function Header() {
       <div className="relative flex flex-grow basis-0 items-center">
         <Link href="https://therapedia.ai" aria-label="Therapedia homepage">
           <Logo className="hidden h-9 w-auto fill-slate-700 lg:block dark:fill-sky-100" />
+          <Logomark className="h-9 w-9 lg:hidden" />
         </Link>
       </div>
       {/*<div className="-my-5 mr-6 sm:mr-8 md:mr-0">
