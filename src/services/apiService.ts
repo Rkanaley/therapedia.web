@@ -1,16 +1,23 @@
-import axios from 'axios'
-import { Transcription } from '@/types'
+import { AssemblyAI, RealtimeTranscript } from 'assemblyai';
+import recorder from 'node-record-lpcm16';
+import axios from 'axios';
+import { Transcription, TranscriptionResults } from '../types';
 
-const API_URL = process.env.NEXT_PUBLIC_API_URL
+// Initialize AssemblyAI client with your API key
+const assembly = new AssemblyAI({
+  apiKey: 'd6d5d9f47500453187c2ed1fc357e173',
+});
+
+const API_URL = process.env.NEXT_PUBLIC_API_URL;
 
 export const login = async (email: string, password: string) => {
   const response = await axios.post(`${API_URL}/auth/login`, {
     email,
     password,
-  })
+  });
 
-  return response.data
-}
+  return response.data;
+};
 
 export const validateToken = async (token: string) => {
   const response = await axios.post(
@@ -22,76 +29,51 @@ export const validateToken = async (token: string) => {
         Authorization: `Bearer ${token}`,
       },
     },
-  )
+  );
 
-  return response.status === 200
-}
+  return response.status === 200;
+};
 
-export const createTranscription = async (token: string): Promise<number> => {
-  const response = await axios.post(
-    `${API_URL}/transcriptions`,
-    { text: '' },
-    {
-      headers: {
-        'Content-Type': 'application/json',
-        Authorization: `Bearer ${token}`,
-      },
-    },
-  )
-
-  if (response.status !== 201) {
-    throw new Error('Failed to create transcription')
+// Create transcription from audio URL
+export const createTranscription = async (audioUrl: string): Promise<string> => {
+  const response = await assembly.transcripts.transcribe({ audio_url: audioUrl });
+  if (!response || !response.id) {
+    throw new Error('Failed to create transcription');
   }
+  return response.id;
+};
 
-  const { id } = response.data
-  return id
-}
+// Get transcription result
+export const getTranscriptionResult = async (transcriptionId: string): Promise<TranscriptionResults> => {
+  const transcript = await assembly.transcripts.get(transcriptionId);
+  if (!transcript) {
+    throw new Error('Failed to fetch transcription');
+  }
+  return transcript as TranscriptionResults;
+};
 
-export const updateTranscription = async (
-  token: string,
-  transcriptionId: number,
-  text: string,
-) => {
-  await axios.put(
-    `${API_URL}/transcriptions/${transcriptionId}`,
-    { text },
-    {
-      headers: {
-        'Content-Type': 'application/json',
-        Authorization: `Bearer ${token}`,
-      },
-    },
-  )
-}
+// Get transcription summary
+export const getTranscriptionSummary = async (transcriptionId: string): Promise<string> => {
+  const transcript = await getTranscriptionResult(transcriptionId);
+  return transcript.summary || '';
+};
 
-export const listTranscriptions = async (token: string) => {
-  const res = await axios.get(`${API_URL}/transcriptions`, {
+// Get formatted transcription
+export const getFormattedTranscription = async (transcriptionId: string): Promise<string> => {
+  const transcript = await getTranscriptionResult(transcriptionId);
+  return transcript.formattedText || '';
+};
+
+// List all transcriptions
+export const listTranscriptions = async (token: string): Promise<Transcription[]> => {
+  const response = await axios.get(`${API_URL}/transcriptions`, {
     headers: {
       'Content-Type': 'application/json',
       Authorization: `Bearer ${token}`,
     },
-  })
+  });
 
-  return res.data as Transcription[]
-}
-
-export const processTranscription = async (
-  token: string,
-  transcriptionId: number,
-): Promise<{
-  message: 'string'
-  result: { summary: string; formattedText: string }
-}> => {
-  const response = await axios.post(
-    `${API_URL}/transcriptions/${transcriptionId}/process`,
-    { text: '' },
-    {
-      headers: {
-        'Content-Type': 'application/json',
-        Authorization: `Bearer ${token}`,
-      },
-    },
-  )
-
-  return response.data
-}
+  return response.data as Transcription[];
+};
+// Function for real-time transcription
+export const startR: any = null;
